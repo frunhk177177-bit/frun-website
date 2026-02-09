@@ -1,0 +1,148 @@
+import streamlit as st
+import pandas as pd
+import datetime
+
+# --- 1. 設定網站基礎配置 (必須在第一行) ---
+st.set_page_config(page_title="FRUN", page_icon="⚫", layout="centered")
+
+# --- 2. 載入 FRUN 黑白極簡風格 CSS ---
+st.markdown("""
+    <style>
+    /* 強制背景全黑 */
+    .stApp {
+        background-color: #000000;
+        color: #FFFFFF;
+    }
+    /* 所有文字白色 */
+    h1, h2, h3, p, div, label, span {
+        color: #FFFFFF !important;
+        font-family: 'Helvetica', sans-serif;
+    }
+    /* 輸入框風格 */
+    .stTextInput > div > div > input {
+        background-color: #1a1a1a; 
+        color: white; 
+        border: 1px solid #444;
+    }
+    /* 按鈕風格 (白色方塊) */
+    .stButton > button {
+        background-color: #FFFFFF;
+        color: #000000 !important;
+        border-radius: 0px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        width: 100%;
+        border: none;
+    }
+    .stButton > button:hover {
+        background-color: #cccccc;
+    }
+    /* 隱藏 Streamlit 預設選單 */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 3. 模擬資料庫 (暫存於記憶體) ---
+if 'events' not in st.session_state:
+    st.session_state.events = [
+        {"Event": "URBAN NIGHT 5K", "Date": "2024-02-14", "Time": "20:00", "Loc": "Central Pier 10"},
+        {"Event": "SUNDAY LSD 15K", "Date": "2024-02-18", "Time": "07:00", "Loc": "Repulse Bay"},
+    ]
+if 'notice' not in st.session_state:
+    st.session_state.notice = "⚠️ TYPHOON SIGNAL NO.1 - TRAINING AS USUAL."
+
+# --- 4. 側邊選單 ---
+with st.sidebar:
+    st.title("FRUN.")
+    menu = st.radio("NAVIGATION", ["HOME", "MEMBER", "ADMIN"])
+    st.markdown("---")
+    st.caption("EST. 2026 HONG KONG")
+
+# --- 5. 頁面內容 ---
+
+# === 首頁 (HOME) ===
+if menu == "HOME":
+    st.title("RUN FAST. LIVE LOUD.")
+    st.image("https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?q=80&w=2074&auto=format&fit=crop", caption="THE CREW")
+    
+    st.markdown("---")
+    st.subheader("LATEST NOTICE")
+    st.info(st.session_state.notice)
+    
+    st.markdown("---")
+    st.subheader("UPCOMING")
+    for event in st.session_state.events:
+        with st.container():
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write(f"**{event['Event']}**")
+                st.caption(f"📍 {event['Loc']} | 🕒 {event['Date']} {event['Time']}")
+            with col2:
+                st.button("INFO", key=f"btn_{event['Event']}")
+            st.divider()
+
+# === 會員登入 (MEMBER) ===
+elif menu == "MEMBER":
+    st.header("MEMBER ACCESS")
+    
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+
+    if not st.session_state.logged_in:
+        u = st.text_input("EMAIL")
+        p = st.text_input("PASSWORD", type="password")
+        if st.button("LOGIN"):
+            if u and p: # 演示用：只要有輸入就登入成功
+                st.session_state.logged_in = True
+                st.success("WELCOME BACK.")
+                st.rerun()
+    else:
+        st.success("YOU ARE LOGGED IN.")
+        st.subheader("YOUR SCHEDULE")
+        st.write("You have 2 upcoming runs this week.")
+        
+        # 顯示活動並提供 RSVP 功能
+        for i, event in enumerate(st.session_state.events):
+            c1, c2 = st.columns([4,1])
+            c1.write(f"🏃 {event['Event']}")
+            if c2.button("JOIN", key=f"rsvp_{i}"):
+                st.toast(f"RSVP CONFIRMED: {event['Event']}")
+
+        if st.button("LOGOUT"):
+            st.session_state.logged_in = False
+            st.rerun()
+
+# === 管理員後台 (ADMIN) ===
+elif menu == "ADMIN":
+    st.header("ADMIN CONSOLE")
+    pwd = st.text_input("ADMIN PIN", type="password")
+    
+    if pwd == "8888": # 管理員密碼設定為 8888
+        st.success("ACCESS GRANTED")
+        
+        tab1, tab2 = st.tabs(["ADD EVENT", "UPDATE NOTICE"])
+        
+        with tab1:
+            with st.form("new_event"):
+                name = st.text_input("Event Name")
+                date = st.date_input("Date")
+                time = st.time_input("Time")
+                loc = st.text_input("Location")
+                if st.form_submit_button("PUBLISH"):
+                    st.session_state.events.append({
+                        "Event": name,
+                        "Date": str(date),
+                        "Time": str(time),
+                        "Loc": loc
+                    })
+                    st.success("Event Added!")
+        
+        with tab2:
+            new_notice = st.text_input("New Announcement")
+            if st.button("UPDATE"):
+                st.session_state.notice = new_notice
+                st.success("Notice Board Updated!")
+                
+    elif pwd:
+        st.error("ACCESS DENIED")
