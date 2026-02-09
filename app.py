@@ -101,7 +101,7 @@ except:
     df = pd.DataFrame()
 
 if menu == "HOME":
-    st.title("RUN FAST. LIVE LOUD.")
+    st.title("FRUN - WE RUN FOR FUN")
     st.image("https://images.unsplash.com/photo-1552674605-469523170d9e?q=80&w=2070")
     st.info("📢 SYSTEM ONLINE.")
 
@@ -154,3 +154,4 @@ elif menu == "ADMIN":
                 conn.update(worksheet="Sheet1", data=pd.concat([df, new_row], ignore_index=True))
                 st.success("PUBLISHED")
                 st.rerun()
+
