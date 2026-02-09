@@ -154,4 +154,3 @@ elif menu == "ADMIN":
                 conn.update(worksheet="Sheet1", data=pd.concat([df, new_row], ignore_index=True))
                 st.success("PUBLISHED")
                 st.rerun()
-
