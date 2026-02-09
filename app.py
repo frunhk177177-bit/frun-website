@@ -101,7 +101,7 @@ except:
     df = pd.DataFrame()
 
 if menu == "HOME":
-    st.title("FRUN - WE RUN FOR FUN")
+    st.title("RUN FAST. LIVE LOUD.")
     st.image("https://images.unsplash.com/photo-1552674605-469523170d9e?q=80&w=2070")
     st.info("📢 SYSTEM ONLINE.")
 
