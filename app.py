@@ -2,153 +2,230 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# --- 1. 網站基礎設定 & 黑白型格設計 ---
-st.set_page_config(page_title="FRUN CLUB", page_icon="⚫", layout="centered")
+# --- 1. 設定 & Midnight Runners 風格 CSS ---
+st.set_page_config(page_title="FRUN CLUB", page_icon="⚡", layout="centered")
 
 st.markdown("""
     <style>
-    /* 全站黑底白字 */
-    .stApp { background-color: #000000; color: #FFFFFF; }
+    /* 引入 Google Fonts: Oswald (粗體海報字) */
+    @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+
+    /* 全站背景：深黑 */
+    .stApp { background-color: #000000; }
     
-    /* 字體設定 */
-    h1, h2, h3, p, div, label, span, li { 
+    /* 標題風格 - 模仿 Midnight Runners 的大字 */
+    h1, h2, h3 { 
         color: #FFFFFF !important; 
-        font-family: 'Helvetica Now', 'Helvetica', sans-serif; 
+        font-family: 'Oswald', sans-serif;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 1px;
     }
     
-    /* 隱藏預設選單 */
+    /* 內文風格 */
+    p, div, label, span, li { 
+        color: #E0E0E0 !important; 
+        font-family: 'Helvetica', sans-serif; 
+    }
+    
+    /* 隱藏預設元素 */
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     
-    /* 按鈕樣式 (Sporty Block) */
+    /* 輸入框：深灰底白字 */
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea {
+        background-color: #121212; 
+        color: white; 
+        border: 1px solid #333;
+        border-radius: 0px;
+    }
+
+    /* 按鈕：Midnight Runners 風格 (霓虹粉紅 Hover 效果) */
     .stButton > button {
         background-color: #FFFFFF;
         color: #000000 !important;
-        border-radius: 0px;
-        font-weight: 800;
+        border-radius: 0px; /* 直角 */
+        font-family: 'Oswald', sans-serif;
+        font-size: 18px;
+        font-weight: bold;
         text-transform: uppercase;
-        border: 1px solid white;
-        transition: all 0.3s ease;
+        border: none;
+        transition: all 0.2s ease;
+        padding: 0.5rem 1rem;
     }
     .stButton > button:hover {
-        background-color: #000000;
+        background-color: #FF0055; /* Neon Pink */
         color: #FFFFFF !important;
-        border: 1px solid white;
+        box-shadow: 0 0 10px #FF0055; /* 發光效果 */
     }
 
-    /* 報名名單的樣式 */
-    .attendee-tag {
-        background-color: #222;
-        padding: 2px 8px;
-        margin-right: 5px;
-        font-size: 0.8em;
-        border: 1px solid #444;
-        display: inline-block;
+    /* 活動卡片外框 */
+    .event-card {
+        border: 1px solid #333;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #0a0a0a;
+    }
+    
+    /* 參加者標籤 */
+    .attendee-badge {
+        background-color: #FF0055;
+        color: white;
+        padding: 2px 6px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 4px;
+        border-radius: 0px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. 初始化資料 (加入 'Attendees' 名單) ---
+# --- 2. 初始化資料 (加入 'Description' 欄位) ---
 if 'events' not in st.session_state:
     st.session_state.events = [
         {
             "id": 1, 
-            "Event": "URBAN NIGHT 5K", 
+            "Event": "NEON NIGHT RUN 10K", 
             "Date": "FEB 14 (WED)", 
-            "Time": "20:00", 
-            "Loc": "Central Pier 10", 
-            "Attendees": ["Alex", "Sarah", "J-Dawg"] # 預設假名單
+            "Time": "19:30", 
+            "Loc": "Central Harbourfront", 
+            "Desc": "Music synced run. 3 workout stations (Burpees, Squats). Bring the energy!",
+            "Attendees": ["ALEX", "SARAH", "MIKE"]
         },
         {
             "id": 2, 
-            "Event": "SUNDAY LSD 15K", 
+            "Event": "SUNDAY RECOVERY", 
             "Date": "FEB 18 (SUN)", 
-            "Time": "07:00", 
-            "Loc": "Repulse Bay", 
-            "Attendees": ["Coach K", "Sam"] 
+            "Time": "08:00", 
+            "Loc": "The Peak", 
+            "Desc": "Easy pace. Coffee afterwards. No music, just vibes.",
+            "Attendees": ["COACH K"] 
         },
     ]
 
-# 模擬登入狀態
+# 模擬使用者狀態
 if 'user' not in st.session_state:
     st.session_state.user = None
 
 # --- 3. 側邊選單 ---
 with st.sidebar:
     st.title("FRUN.")
-    menu = st.radio("MENU", ["HOME", "EVENTS", "LOGIN"])
+    menu = st.radio("MENU", ["HOME", "EVENTS", "ADMIN"])
+    
     st.markdown("---")
-    if st.session_state.user:
-        st.write(f"👤 LOGGED IN AS: **{st.session_state.user}**")
+    # 簡易登入區塊 (放在 Sidebar 比較不佔空間)
+    if not st.session_state.user:
+        st.caption("MEMBER LOGIN")
+        name_input = st.text_input("YOUR NAME", key="login_input")
+        if st.button("ENTER"):
+            if name_input:
+                st.session_state.user = name_input.upper()
+                st.rerun()
+    else:
+        st.write(f"⚡ WELCOME, **{st.session_state.user}**")
         if st.button("LOGOUT"):
             st.session_state.user = None
             st.rerun()
 
 # --- 4. 頁面邏輯 ---
 
-# === LOGIN PAGE ===
-if menu == "LOGIN":
-    st.header("MEMBER ACCESS")
+# === HOME PAGE ===
+if menu == "HOME":
+    st.title("OUR CITY. OUR RUN.")
+    st.markdown("### WE RUN LOUD.")
     
-    if not st.session_state.user:
-        name_input = st.text_input("ENTER YOUR NAME TO JOIN")
-        if st.button("ENTER SYSTEM"):
-            if name_input:
-                st.session_state.user = name_input.upper() # 自動變大寫，比較型
-                st.success(f"WELCOME, {name_input.upper()}")
-                st.rerun()
-    else:
-        st.success("YOU ARE ALREADY LOGGED IN.")
-        st.info("Go to 'EVENTS' to join the runs.")
+    # 這裡放一張很有 Midnight Runners 感覺的照片 (Unsplash)
+    st.image("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop", use_column_width=True)
+    
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.header("NEXT EVENT")
+        next_event = st.session_state.events[0]
+        st.markdown(f"**{next_event['Event']}**")
+        st.caption(f"{next_event['Date']} | {next_event['Loc']}")
+    with col2:
+        st.header("THE CREW")
+        st.markdown("Join a community of runners who refuse to be average.")
 
 # === EVENTS PAGE (核心功能) ===
 elif menu == "EVENTS":
     st.title("UPCOMING SESSIONS")
-    st.markdown("Join the crew. No excuses.")
+    st.markdown("_MUSIC. SWEAT. VIBES._")
     st.divider()
 
     for i, event in enumerate(st.session_state.events):
-        # 顯示活動卡片
+        # 這裡用 st.container 模擬卡片
         with st.container():
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                st.subheader(event['Event'])
-                st.caption(f"📍 {event['Loc']} | 🕒 {event['Date']} @ {event['Time']}")
+            # 上半部：標題與時間
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                st.markdown(f"### {event['Event']}") 
+                st.markdown(f"**📍 {event['Loc']}** |  **🕒 {event['Date']} @ {event['Time']}**")
                 
-                # --- 這裡就是你要的功能：顯示誰參加了 ---
-                attendee_list = event['Attendees']
-                count = len(attendee_list)
+                # --- 新增功能：顯示 Description ---
+                if event['Desc']:
+                    st.info(f"ℹ️ {event['Desc']}")
                 
-                if count > 0:
-                    st.markdown(f"**🔥 {count} PEOPLE JOINED:**")
-                    # 將名單變成字串顯示
-                    names_display = ", ".join(attendee_list)
-                    st.markdown(f"<span style='color:#888'>{names_display}</span>", unsafe_allow_html=True)
+                # --- 顯示已報名的人 (Social Proof) ---
+                attendees = event['Attendees']
+                if attendees:
+                    st.write(f"🔥 **{len(attendees)} RUNNERS IN:**")
+                    # 用 Badge 風格顯示名字
+                    st.markdown(" ".join([f"`{name}`" for name in attendees]), unsafe_allow_html=True)
                 else:
-                    st.markdown("*Be the first to join.*")
+                    st.caption("Be the first to join.")
 
-            with col2:
-                # 只有登入後才能按按鈕
+            with c2:
+                st.write("") #用來佔位對齊
+                st.write("") 
                 if st.session_state.user:
-                    # 檢查使用者是否已經在名單內
                     if st.session_state.user in event['Attendees']:
-                        st.button("I'M IN ✓", key=f"joined_{i}", disabled=True)
+                        st.success("YOU'RE IN ✓")
                     else:
-                        if st.button("JOIN +", key=f"join_{i}"):
-                            # 將使用者加入名單
+                        if st.button("JOIN PARTY", key=f"join_{i}"):
                             event['Attendees'].append(st.session_state.user)
-                            st.toast(f"BOOM! You're in for {event['Event']}!")
+                            st.toast("BOOM! LIST UPDATED.")
                             st.rerun()
                 else:
-                    st.caption("Login to RSVP")
+                    st.warning("LOGIN TO JOIN")
             
-            st.divider()
+            st.markdown("---")
 
-# === HOME PAGE ===
-elif menu == "HOME":
-    st.title("RUN FAST. LIVE LOUD.")
-    # 這裡可以放一張很酷的跑步背景圖
-    st.image("https://images.unsplash.com/photo-1552674605-469523170d9e?q=80&w=2070&auto=format&fit=crop", use_column_width=True)
+# === ADMIN PAGE (管理員) ===
+elif menu == "ADMIN":
+    st.header("CREW CONTROL")
+    pwd = st.text_input("ADMIN PIN", type="password")
     
-    st.markdown("### LATEST NEWS")
-    st.info("📢 NEW DROP: FRUN Black Series Tee available next week.")
+    if pwd == "8888":
+        st.success("ACCESS GRANTED")
+        
+        with st.form("create_event"):
+            st.subheader("CREATE NEW RUN")
+            
+            # 必填欄位
+            col_a, col_b = st.columns(2)
+            with col_a:
+                e_name = st.text_input("Event Name (e.g. NEON 10K)")
+                e_date = st.text_input("Date (e.g. FEB 20)")
+            with col_b:
+                e_time = st.text_input("Time (e.g. 19:30)")
+                e_loc = st.text_input("Location")
+            
+            # --- 新增功能：活動詳細內容 ---
+            e_desc = st.text_area("Description / Workout Details", 
+                                  placeholder="Describe the vibe, the music, or the workout plan...")
+            
+            submitted = st.form_submit_button("PUBLISH EVENT")
+            
+            if submitted:
+                new_event = {
+                    "id": len(st.session_state.events) + 1,
+                    "Event": e_name,
+                    "Date": e_date,
+                    "Time": e_time,
+                    "Loc": e_loc,
+                    "Desc": e_desc, # 儲存描述
+                    "Attendees": []
+                }
+                st.session_state.events.append(new_event)
+                st.success("EVENT LIVE! CHECK THE 'EVENTS' TAB.")
