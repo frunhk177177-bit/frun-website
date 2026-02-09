@@ -32,7 +32,7 @@ if 'user' not in st.session_state:
     st.session_state.user = None
 
 # ==========================================
-# 4. 側邊選單 (Sidebar) - 強力除錯版登入
+# 4. 側邊選單 (Sidebar) - 含自動去小數點功能
 # ==========================================
 with st.sidebar:
     st.title("FRUN.")
@@ -51,10 +51,14 @@ with st.sidebar:
                     # 1. 讀取 Members 分頁
                     df_members = conn.read(worksheet="Members", ttl=0)
                     
-                    # 2. 強力清洗資料 (全部轉文字 + 刪除空白 + 轉大寫)
-                    # 確保 'Name' 和 'Password' 欄位都變成字串 (防止數字錯誤)
+                    # 2. 強力清洗資料 (這段是新的！)
+                    # 把 Name 轉大寫
                     df_members['Name'] = df_members['Name'].astype(str).str.strip().str.upper()
+                    
+                    # === 關鍵修正：處理密碼 ===
+                    # 先轉成字串，如果結尾是 .0 就把它切掉
                     df_members['Password'] = df_members['Password'].astype(str).str.strip()
+                    df_members['Password'] = df_members['Password'].apply(lambda x: x.replace(".0", "") if x.endswith(".0") else x)
                     
                     # 使用者輸入也要清洗
                     clean_login_name = str(login_name).strip().upper()
@@ -72,27 +76,11 @@ with st.sidebar:
                         st.rerun()
                     else:
                         st.error("LOGIN FAILED")
-                        
-                        # === 這裡就是「抓鬼模式」 ===
-                        # 告訴你為什麼失敗
-                        st.warning("🕵️‍♂️ DEBUG INFO:")
-                        
-                        # 檢查帳號是否存在
-                        name_check = df_members[df_members['Name'] == clean_login_name]
-                        if name_check.empty:
-                            st.write(f"❌ 找不到帳號: `{clean_login_name}`")
-                            st.write(f"📊 資料庫裡有的帳號: {df_members['Name'].tolist()}")
-                        else:
-                            st.write(f"✅ 帳號 `{clean_login_name}` 存在！")
-                            # 既然帳號存在，顯示該帳號的密碼是什麼
-                            real_pwd = name_check.iloc[0]['Password']
-                            st.write(f"❌ 但密碼不對。")
-                            st.write(f"🔑 資料庫的密碼是: `{real_pwd}`")
-                            st.write(f"⌨️ 你輸入的密碼是: `{clean_login_pwd}`")
+                        # 簡單提示，不用顯示太多 Debug 資訊了
+                        st.caption("請檢查帳號密碼是否正確。")
                             
                 except Exception as e:
                     st.error(f"系統錯誤: {e}")
-                    st.info("請確認 Google Sheet 分頁名稱是 'Members'")
             else:
                 st.warning("Enter Name & Password")
     else:
