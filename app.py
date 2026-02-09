@@ -228,3 +228,24 @@ elif menu == "ADMIN":
                 
                 st.success("EVENT PUBLISHED")
                 st.rerun()
+
+# === DEBUG 測試區 (請貼在 app.py 最下面) ===
+st.divider()
+st.subheader("🕵️‍♂️ DEBUG 模式：檢查會員名單")
+try:
+    # 嘗試讀取 Members 分頁
+    df_debug = conn.read(worksheet="Members", ttl=0)
+    st.write("✅ 成功讀取 Members 分頁！以下是電腦看到的資料：")
+    st.dataframe(df_debug)
+    
+    st.write("👉 欄位名稱檢查：", df_debug.columns.tolist())
+    
+    # 檢查是否有 'Name' 和 'Password' 欄位
+    if 'Name' not in df_debug.columns:
+        st.error("❌ 找不到 'Name' 欄位！請檢查 Google Sheet A1 格子。")
+    if 'Password' not in df_debug.columns:
+        st.error("❌ 找不到 'Password' 欄位！請檢查 Google Sheet B1 格子。")
+        
+except Exception as e:
+    st.error(f"❌ 讀取失敗：{e}")
+    st.info("提示：這通常代表你的分頁名稱不叫 'Members'。")
